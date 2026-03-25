@@ -9,33 +9,36 @@ app.use(cors({
 }));
 
 // Google Maps route
-app.get("/api/maps", async (req, res) => {
+app.get("/api/maps-init", async (req, res) => {
   try {
     const params = new URLSearchParams({
-      ...req.query,
+      libraries: req.query.libraries || "places",
+      callback: req.query.callback || "initMap",
       key: process.env.GOOGLE_MAPS_API_KEY
     });
 
     const response = await fetch(
-      `https://maps.googleapis.com/maps/api/geocode/json?${params}`
+      `https://maps.googleapis.com/maps/api/js?${params}`
     );
-    const data = await response.json();
-    res.status(response.status).json(data);
+    const js = await response.text();
+    res.setHeader("Content-Type", "application/javascript");
+    res.send(js);
   } catch (err) {
-    res.status(500).json({ error: "Maps proxy error" });
+    res.status(500).send("// Maps proxy error");
   }
 });
 
 // YouTube route
 app.get("/api/youtube", async (req, res) => {
   try {
+    const { endpoint, ...queryParams } = req.query;
     const params = new URLSearchParams({
-      ...req.query,
+      ...queryParams,
       key: process.env.YOUTUBE_API_KEY
     });
 
     const response = await fetch(
-      `https://www.googleapis.com/youtube/v3/${req.query.endpoint}?${params}`
+      `https://www.googleapis.com/youtube/v3/videos?${params}`
     );
     const data = await response.json();
     res.status(response.status).json(data);
